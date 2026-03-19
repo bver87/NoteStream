@@ -9,7 +9,7 @@ services:
     container_name: notestream
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       # Bind mounts — data lives in ./data/ next to this file
       - ./data/db:/data
