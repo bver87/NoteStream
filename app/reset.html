@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reset wachtwoord</title>
+</head>
+<body>
+  <h1>Reset wachtwoord</h1>
+
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
+
+  <form method="post">
+    <input type="hidden" name="token" value="{{ token }}" />
+    <label>Nieuw wachtwoord</label><br/>
+    <input type="password" name="password" required /><br/><br/>
+    <button type="submit">Opslaan</button>
+  </form>
+
+  <p><a href="/login">Terug naar login</a></p>
+</body>
+</html>

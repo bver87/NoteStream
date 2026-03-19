@@ -1,0 +1,34 @@
+services:
+  notestream:
+    build:
+      context: .
+      args:
+        # Change to 'medium' for faster builds / less RAM (~2 GB vs ~4 GB)
+        WHISPER_MODEL: large-v3
+    image: notestream:latest
+    container_name: notestream
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind mounts — data lives in ./data/ next to this file
+      - ./data/db:/data
+      - ./data/uploads:/app/uploads
+      - ./data/output:/app/output
+      - ./data/models:/app/models   # Whisper model cache persists across rebuilds
+    environment:
+      SESSION_SECRET:     ${SESSION_SECRET}
+      RESEND_API_KEY:     ${RESEND_API_KEY}
+      APP_BASE_URL:       ${APP_BASE_URL}
+      HF_TOKEN:           ${HF_TOKEN:-}     # Hugging Face token (optional for public models)
+      DB_PATH:            /data/app.db
+      WHISPER_MODEL:      large-v3
+      MAX_WORKERS:        "2"               # Parallel transcription jobs
+      HF_HOME:            /app/models
+      TRANSFORMERS_CACHE: /app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s   # Give uvicorn time to load the Whisper model on startup

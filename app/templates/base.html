@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NoteStream{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #060a12;
+      --surface:   #0c1220;
+      --border:    #1a2540;
+      --border-hi: #243660;
+      --accent:    #22d3ee;
+      --accent2:   #818cf8;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --ok:        #4ade80;
+      --warn:      #fbbf24;
+      --err:       #f87171;
+      --radius:    14px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(34,211,238,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ---------- CARD ---------- */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow:
+        0 0 0 1px rgba(34,211,238,.04),
+        0 24px 80px rgba(0,0,0,.5),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    /* ---------- LOGO ---------- */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-mark {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg { width: 18px; height: 18px; }
+
+    .logo-text {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ---------- TYPOGRAPHY ---------- */
+    h1 {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* ---------- FORM ELEMENTS ---------- */
+    label.field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 18px 0 7px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(34,211,238,.1);
+    }
+
+    /* ---------- BUTTONS ---------- */
+    .btn {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent) 0%, #38bdf8 100%);
+      color: #060a12;
+      font-family: var(--font-head);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+
+    .btn:hover  { opacity: .9; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      color: var(--accent);
+      font-size: 13px;
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      font-family: var(--font-body);
+      transition: background .15s, border-color .15s;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(34,211,238,.07);
+      border-color: rgba(34,211,238,.2);
+    }
+
+    /* ---------- ALERTS ---------- */
+    .alert {
+      margin-top: 16px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .alert-error {
+      border: 1px solid rgba(248,113,113,.3);
+      background: rgba(248,113,113,.07);
+      color: #fca5a5;
+    }
+
+    .alert-success {
+      border: 1px solid rgba(74,222,128,.3);
+      background: rgba(74,222,128,.07);
+      color: #86efac;
+    }
+
+    /* ---------- NAV ROW ---------- */
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    /* ---------- DIVIDER ---------- */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    /* ---------- TOPBAR (for upload / uploads pages) ---------- */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .topbar-logo .logo-text { font-size: 18px; }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+</body>
+</html>

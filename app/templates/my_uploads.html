@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}Mijn uploads – NoteStream{% endblock %}
+
+{% block head %}
+<style>
+  body { padding: 28px 16px 60px; }
+
+  .page { max-width: 820px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* ---------- TOPBAR ---------- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .topbar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .topbar-logo .logo-mark { width: 28px; height: 28px; border-radius: 7px; }
+  .topbar-logo .logo-mark svg { width: 14px; height: 14px; }
+  .topbar-logo .logo-text { font-size: 18px; }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -.4px;
+    margin-bottom: 20px;
+  }
+
+  /* ---------- TABLE ---------- */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.35);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.015);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(34,211,238,.025); }
+
+  td { padding: 14px 16px; vertical-align: middle; font-size: 13px; }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: .03em;
+  }
+
+  .badge-done       { background: rgba(74,222,128,.12);  color: var(--ok);   border: 1px solid rgba(74,222,128,.2); }
+  .badge-processing { background: rgba(251,191,36,.1);   color: var(--warn); border: 1px solid rgba(251,191,36,.2); }
+  .badge-error      { background: rgba(248,113,113,.1);  color: var(--err);  border: 1px solid rgba(248,113,113,.2); }
+  .badge-expired    { background: rgba(100,116,139,.1);  color: var(--muted);border: 1px solid rgba(100,116,139,.2); }
+
+  /* Progress bar inline */
+  .progress-wrap { margin-top: 8px; }
+  .progress-track {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #38bdf8);
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+  .progress-label {
+    margin-top: 4px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+
+  /* ID column */
+  .job-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Action links */
+  .action-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    margin-right: 10px;
+    white-space: nowrap;
+    transition: opacity .15s;
+  }
+  .action-link:hover { opacity: .75; }
+
+  .action-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 10px;
+    font-family: var(--font-body);
+  }
+  .action-btn:hover { opacity: .75; }
+
+  .action-btn-err { color: var(--err); }
+
+  /* Copy feedback inline */
+  .copy-ok { font-size: 11px; color: var(--ok); font-family: var(--font-mono); }
+
+  /* Empty state */
+  .empty {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty a { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <a class="topbar-logo" href="/">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#060a12" stroke-width="2.5" stroke-linecap="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+        </svg>
+      </div>
+      <span class="logo-text">NoteStream</span>
+    </a>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <a class="btn-ghost" href="/">Nieuwe upload</a>
+      <form action="/logout" method="post" style="display:inline">
+        <button class="btn-ghost" type="submit">Logout</button>
+      </form>
+    </div>
+  </div>
+
+  <h1>Mijn uploads</h1>
+
+  {% if jobs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Job ID</th>
+          <th>Acties</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr id="row-{{ job.file_id }}">
+
+          <!-- STATUS -->
+          <td style="min-width:160px;">
+            <span class="badge badge-{{ job.status }}">
+              {% if job.status == "done" %}✓ Klaar
+              {% elif job.status == "processing" %}⏳ Bezig
+              {% elif job.status == "error" %}✗ Fout
+              {% else %}Verlopen{% endif %}
+            </span>
+
+            {% if job.status == "processing" %}
+            <div class="progress-wrap">
+              <div class="progress-track">
+                <div class="progress-bar" id="bar-{{ job.file_id }}"
+                     style="width: {{ job.progress }}%"></div>
+              </div>
+              <div class="progress-label" id="info-{{ job.file_id }}">
+                {{ job.progress }}%
+              </div>
+            </div>
+            {% endif %}
+          </td>
+
+          <!-- ID -->
+          <td><span class="job-id">{{ job.file_id[:8] }}…</span></td>
+
+          <!-- ACTIONS -->
+          <td>
+            {% if job.status == "done" %}
+              <a class="action-link" href="{{ job.download_url }}">⬇ Download</a>
+
+              {% if job.share_url %}
+                <button class="action-btn"
+                        onclick="copyLink('{{ request.url.scheme }}://{{ request.url.netloc }}{{ job.share_url }}', this)">
+                  📋 Kopieer link
+                </button>
+                <a class="action-link"
+                   href="shortcuts://run-shortcut?name=NoteStream&input=text&text={{ (request.url.scheme ~ '://' ~ request.url.netloc ~ job.share_url) | urlencode }}">
+                  ⚡ Shortcut
+                </a>
+              {% endif %}
+
+            {% elif job.status == "error" %}
+              <button class="action-btn action-btn-err" onclick="retryJob('{{ job.file_id }}')">
+                ↺ Opnieuw proberen
+              </button>
+
+            {% elif job.status == "processing" %}
+              <span style="color:var(--muted);font-size:13px;">Bezig…</span>
+
+            {% else %}
+              <span style="color:var(--muted);font-size:13px;">Verlopen</span>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="table-wrap">
+    <div class="empty">
+      Nog geen uploads. <a href="/">Start je eerste transcriptie →</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  function formatETA(s) {
+    if (s == null || s <= 0) return "";
+    const m = Math.floor(s / 60), sec = s % 60;
+    return `ETA ${m}:${sec.toString().padStart(2, "0")}`;
+  }
+
+  async function retryJob(fileId) {
+    const res = await fetch(`/retry/${fileId}`, { method: "POST" });
+    if (res.ok) location.reload();
+    else alert("Retry mislukt.");
+  }
+
+  function copyLink(url, btn) {
+    navigator.clipboard.writeText(url).then(() => {
+      const original = btn.textContent;
+      btn.textContent = "✓ Gekopieerd!";
+      btn.classList.add("copy-ok");
+      setTimeout(() => { btn.textContent = original; btn.classList.remove("copy-ok"); }, 2000);
+    });
+  }
+
+  async function pollProgress() {
+    const rows = document.querySelectorAll("[id^='row-']");
+    for (const row of rows) {
+      const fileId = row.id.replace("row-", "");
+      const bar    = document.getElementById(`bar-${fileId}`);
+      const info   = document.getElementById(`info-${fileId}`);
+      if (!bar) continue;
+
+      try {
+        const res  = await fetch(`/status/${fileId}`);
+        const data = await res.json();
+
+        if (data.status === "processing") {
+          bar.style.width = data.progress + "%";
+          let line = `${data.progress}%`;
+          if (data.current_chunk && data.total_chunks)
+            line += ` · ${data.current_chunk}/${data.total_chunks}`;
+          if (data.eta_seconds != null)
+            line += ` · ${formatETA(data.eta_seconds)}`;
+          if (info) info.textContent = line;
+        }
+
+        if (data.status === "done" || data.status === "error") {
+          location.reload();
+        }
+      } catch (e) { /* network blip */ }
+    }
+  }
+
+  // Only poll if there are active jobs
+  const hasProcessing = document.querySelector(".badge-processing");
+  if (hasProcessing) setInterval(pollProgress, 3000);
+</script>
+{% endblock %}
