@@ -77,6 +77,7 @@ def init_db() -> None:
                 audio_path    TEXT,      -- stored so retry can re-queue the file
                 agenda        TEXT,
                 text_token    TEXT,      -- random token for the /share/ endpoint
+                model_size    TEXT DEFAULT 'medium',  -- whisper model used for this job
                 created_at    INTEGER NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             );
@@ -92,6 +93,7 @@ def init_db() -> None:
             "audio_path":    "ALTER TABLE jobs ADD COLUMN audio_path    TEXT",
             "agenda":        "ALTER TABLE jobs ADD COLUMN agenda        TEXT",
             "text_token":    "ALTER TABLE jobs ADD COLUMN text_token    TEXT",
+            "model_size":    "ALTER TABLE jobs ADD COLUMN model_size    TEXT DEFAULT 'medium'",
         })
 
         # Indexes — each maps to a common query pattern

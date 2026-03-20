@@ -42,6 +42,7 @@ OUTPUT_DIR        = "/app/output"
 TEXT_TTL_SECONDS  = 60 * 60 * 48        # 48 uur
 MAX_WORKERS       = int(os.getenv("MAX_WORKERS", 2))
 SESSION_SECRET    = os.getenv("SESSION_SECRET", "dev-only-change-me")
+MAX_UPLOAD_MB     = int(os.getenv("MAX_UPLOAD_MB", 500))   # 500 MB — covers 2hr recordings
 # ----------------------------------------
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -144,10 +145,23 @@ async def upload_audio(
     file: UploadFile = File(...),
     agenda_text: str | None = Form(None),
     agenda_file: UploadFile | None = File(None),
+    model_size: str = Form("medium"),
 ):
     user = get_current_user(request)
     if not user:
         return JSONResponse({"error": "Niet ingelogd"}, status_code=401)
+
+    # Validate model choice
+    if model_size not in ("small", "medium"):
+        model_size = "medium"
+
+    # Validate file size before saving
+    contents = await file.read()
+    if len(contents) > MAX_UPLOAD_MB * 1024 * 1024:
+        return JSONResponse(
+            {"error": f"Bestand te groot. Maximum is {MAX_UPLOAD_MB} MB."},
+            status_code=413,
+        )
 
     file_id   = str(uuid.uuid4())
     created_at = int(time.time())
@@ -156,7 +170,7 @@ async def upload_audio(
     audio_ext  = os.path.splitext(file.filename or "audio.m4a")[1] or ".m4a"
     audio_path = os.path.join(UPLOAD_DIR, f"{file_id}{audio_ext}")
     with open(audio_path, "wb") as f:
-        f.write(await file.read())
+        f.write(contents)
 
     # Save optional agenda file
     agenda_file_path: str | None = None
@@ -174,23 +188,23 @@ async def upload_audio(
             INSERT INTO jobs (
                 id, user_id, status,
                 progress, current_chunk, total_chunks, eta_seconds,
-                agenda, created_at
+                agenda, model_size, created_at
             )
-            VALUES (?, ?, 'processing', 0, 0, 0, NULL, ?, ?)
+            VALUES (?, ?, 'processing', 0, 0, 0, NULL, ?, ?, ?)
             """,
-            (file_id, user["id"], agenda, created_at),
+            (file_id, user["id"], agenda, model_size, created_at),
         )
         conn.commit()
 
     # Submit to thread pool — non-blocking, won't stall other requests
-    executor.submit(process_audio, file_id, audio_path, agenda_file_path)
+    executor.submit(process_audio, file_id, audio_path, agenda_file_path, model_size)
 
     log.info("Job %s queued for user %s", file_id, user["id"])
     return {"file_id": file_id, "status": "processing"}
 
 
 # ---------- Background processing ----------
-def process_audio(file_id: str, audio_path: str, agenda_file_path: str | None) -> None:
+def process_audio(file_id: str, audio_path: str, agenda_file_path: str | None, model_size: str = "medium") -> None:
     start_ts = time.time()
     log.info("▶️  process_audio START  job=%s", file_id)
 
@@ -215,7 +229,7 @@ def process_audio(file_id: str, audio_path: str, agenda_file_path: str | None) -
                 )
                 conn.commit()
 
-        transcript = transcribe_file(audio_path, progress_cb=progress_cb)
+        transcript = transcribe_file(audio_path, progress_cb=progress_cb, model_size=model_size)
 
         with get_conn() as conn:
             row = conn.execute(

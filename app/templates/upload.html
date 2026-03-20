@@ -245,6 +245,69 @@
     transition: opacity .3s;
   }
 
+  /* ---------- MODEL TOGGLE ---------- */
+  .model-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .model-option {
+    flex: 1;
+    position: relative;
+  }
+
+  .model-option input[type="radio"] {
+    display: none;
+  }
+
+  .model-option label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    text-align: center;
+  }
+
+  .model-option input:checked + label {
+    border-color: var(--accent);
+    background: rgba(34,211,238,.07);
+  }
+
+  .model-option label:hover {
+    border-color: var(--border-hi);
+  }
+
+  .model-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .model-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .model-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+    margin-top: 2px;
+  }
+
+  .badge-speed  { background: rgba(74,222,128,.15);  color: var(--ok); }
+  .badge-acc    { background: rgba(129,140,248,.15); color: var(--accent2); }
+
   .error-box {
     display: none;
     margin-top: 16px;
@@ -307,6 +370,27 @@
       <label for="agendaFile">📎 Upload bestand</label>
       <input id="agendaFile" type="file" accept=".docx,.txt" />
       <span id="agendaSelected"></span>
+    </div>
+
+    <!-- MODEL TOGGLE -->
+    <div class="section-label">Transcriptie kwaliteit</div>
+    <div class="model-toggle">
+      <div class="model-option">
+        <input type="radio" name="model_size" id="model-small" value="small">
+        <label for="model-small">
+          <span class="model-name">Small</span>
+          <span class="model-desc">Snel · minder nauwkeurig</span>
+          <span class="model-badge badge-speed">⚡ ~30 min/uur</span>
+        </label>
+      </div>
+      <div class="model-option">
+        <input type="radio" name="model_size" id="model-medium" value="medium" checked>
+        <label for="model-medium">
+          <span class="model-name">Medium</span>
+          <span class="model-desc">Gebalanceerd · aanbevolen</span>
+          <span class="model-badge badge-acc">★ ~90 min/uur</span>
+        </label>
+      </div>
     </div>
 
     <!-- UPLOAD BUTTON -->
@@ -411,6 +495,8 @@
     formData.append("file", file);
     if (agendaText.value.trim())       formData.append("agenda_text", agendaText.value.trim());
     if (agendaFile.files.length > 0)   formData.append("agenda_file", agendaFile.files[0]);
+    const modelSize = document.querySelector('input[name="model_size"]:checked')?.value || "medium";
+    formData.append("model_size", modelSize);
 
     const res  = await fetch("/upload", { method: "POST", body: formData });
     const data = await res.json();
