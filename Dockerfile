@@ -24,7 +24,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ---- Pre-download Whisper model at build time ----
-ARG WHISPER_MODEL=large-v3
+ARG WHISPER_MODEL=medium
 ENV WHISPER_MODEL=${WHISPER_MODEL}
 ENV HF_HOME=/app/models
 ENV TRANSFORMERS_CACHE=/app/models

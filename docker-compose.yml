@@ -4,7 +4,7 @@ services:
       context: .
       args:
         # Change to 'medium' for faster builds / less RAM (~2 GB vs ~4 GB)
-        WHISPER_MODEL: large-v3
+        WHISPER_MODEL: medium
     image: notestream:latest
     container_name: notestream
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
       APP_BASE_URL:       ${APP_BASE_URL}
       HF_TOKEN:           ${HF_TOKEN:-}     # Hugging Face token (optional for public models)
       DB_PATH:            /data/app.db
-      WHISPER_MODEL:      large-v3
+      WHISPER_MODEL:      medium
       MAX_WORKERS:        "2"               # Parallel transcription jobs
       HF_HOME:            /app/models
       TRANSFORMERS_CACHE: /app/models
