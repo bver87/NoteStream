@@ -95,11 +95,15 @@
     color: var(--muted);
   }
 
-  /* ID column */
-  .job-id {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
+  /* Title column */
+  .upload-title {
+    display: inline-block;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    font-weight: 600;
   }
 
   /* Action links */
@@ -172,7 +176,7 @@
       <thead>
         <tr>
           <th>Status</th>
-          <th>Job ID</th>
+          <th>Titel</th>
           <th>Acties</th>
         </tr>
       </thead>
@@ -202,8 +206,8 @@
             {% endif %}
           </td>
 
-          <!-- ID -->
-          <td><span class="job-id">{{ job.file_id[:8] }}…</span></td>
+          <!-- TITLE -->
+          <td><span class="upload-title" title="{{ job.title }}">{{ job.title }}</span></td>
 
           <!-- ACTIONS -->
           <td>

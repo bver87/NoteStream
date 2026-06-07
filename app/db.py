@@ -76,6 +76,7 @@ def init_db() -> None:
                 output_path   TEXT,
                 audio_path    TEXT,      -- stored so retry can re-queue the file
                 agenda        TEXT,
+                title         TEXT,      -- transcript title, based on original audio filename
                 text_token    TEXT,      -- random token for the /share/ endpoint
                 model_size    TEXT DEFAULT 'medium',  -- whisper model used for this job
                 created_at    INTEGER NOT NULL,
@@ -92,6 +93,7 @@ def init_db() -> None:
             "output_path":   "ALTER TABLE jobs ADD COLUMN output_path   TEXT",
             "audio_path":    "ALTER TABLE jobs ADD COLUMN audio_path    TEXT",
             "agenda":        "ALTER TABLE jobs ADD COLUMN agenda        TEXT",
+            "title":         "ALTER TABLE jobs ADD COLUMN title         TEXT",
             "text_token":    "ALTER TABLE jobs ADD COLUMN text_token    TEXT",
             "model_size":    "ALTER TABLE jobs ADD COLUMN model_size    TEXT DEFAULT 'medium'",
         })

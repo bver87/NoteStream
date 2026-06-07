@@ -60,6 +60,22 @@ app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 app.include_router(auth_router)
 
 
+@app.get("/manifest.webmanifest")
+def manifest():
+    return FileResponse(
+        "app/static/manifest.webmanifest",
+        media_type="application/manifest+json",
+    )
+
+
+@app.get("/service-worker.js")
+def service_worker():
+    return FileResponse(
+        "app/static/service-worker.js",
+        media_type="application/javascript",
+    )
+
+
 # ---------- startup ----------
 @app.on_event("startup")
 def startup():
@@ -87,6 +103,20 @@ def _safe_remove(path: str | None) -> None:
             os.remove(path)
         except OSError as e:
             log.warning("Could not remove %s: %s", path, e)
+
+
+def _title_from_filename(filename: str | None, fallback: str) -> str:
+    """Return a readable transcript title from an uploaded audio filename."""
+    name = os.path.basename(filename or "").strip()
+    stem = os.path.splitext(name)[0].strip()
+    return stem or fallback
+
+
+def _download_filename(title: str | None, fallback: str) -> str:
+    """Build a safe enough filename for transcript downloads."""
+    base = (title or fallback).strip().replace("/", "-").replace("\\", "-")
+    base = base.rstrip(".")
+    return f"{base or fallback}.txt"
 
 
 # ---------- startup helpers ----------
@@ -165,6 +195,7 @@ async def upload_audio(
 
     file_id   = str(uuid.uuid4())
     created_at = int(time.time())
+    title = _title_from_filename(file.filename, f"notulen_{file_id[:8]}")
 
     # Save audio file
     audio_ext  = os.path.splitext(file.filename or "audio.m4a")[1] or ".m4a"
@@ -188,11 +219,11 @@ async def upload_audio(
             INSERT INTO jobs (
                 id, user_id, status,
                 progress, current_chunk, total_chunks, eta_seconds,
-                agenda, model_size, created_at
+                agenda, title, model_size, created_at
             )
-            VALUES (?, ?, 'processing', 0, 0, 0, NULL, ?, ?, ?)
+            VALUES (?, ?, 'processing', 0, 0, 0, NULL, ?, ?, ?, ?)
             """,
-            (file_id, user["id"], agenda, model_size, created_at),
+            (file_id, user["id"], agenda, title, model_size, created_at),
         )
         conn.commit()
 
@@ -233,15 +264,16 @@ def process_audio(file_id: str, audio_path: str, agenda_file_path: str | None, m
 
         with get_conn() as conn:
             row = conn.execute(
-                "SELECT agenda FROM jobs WHERE id = ?", (file_id,)
+                "SELECT agenda, title FROM jobs WHERE id = ?", (file_id,)
             ).fetchone()
 
         agenda_text = (row["agenda"] if row and row["agenda"] else "Geen agenda aangeleverd.")
+        title = row["title"] if row and row["title"] else f"notulen_{file_id[:8]}"
 
         out_path = os.path.join(OUTPUT_DIR, f"{file_id}_notulen.txt")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(
-                f"=== AGENDA ===\n{agenda_text}\n\n=== TRANSCRIPT ===\n{transcript}"
+                f"=== TITEL ===\n{title}\n\n=== AGENDA ===\n{agenda_text}\n\n=== TRANSCRIPT ===\n{transcript}"
             )
 
         text_token = secrets.token_urlsafe(32)
@@ -328,7 +360,7 @@ def download_transcript(request: Request, file_id: str):
 
     with get_conn() as conn:
         job = conn.execute(
-            "SELECT user_id, status, output_path, created_at FROM jobs WHERE id = ?",
+            "SELECT user_id, status, output_path, created_at, title FROM jobs WHERE id = ?",
             (file_id,),
         ).fetchone()
 
@@ -344,7 +376,7 @@ def download_transcript(request: Request, file_id: str):
 
     return FileResponse(
         job["output_path"],
-        filename=f"notulen_{file_id[:8]}.txt",
+        filename=_download_filename(job["title"], f"notulen_{file_id[:8]}"),
         media_type="text/plain",
     )
 
@@ -422,7 +454,7 @@ def my_uploads(request: Request):
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT id, status, progress, created_at, text_token
+            SELECT id, status, progress, created_at, text_token, title
             FROM jobs
             WHERE user_id = ?
             ORDER BY created_at DESC
@@ -438,6 +470,7 @@ def my_uploads(request: Request):
             "status":       status,
             "progress":     row["progress"],
             "text_token":   row["text_token"],
+            "title":        row["title"] or f"notulen_{row['id'][:8]}",
             "download_url": f"/download/{row['id']}",
             "share_url":    f"/share/{row['text_token']}" if row["text_token"] else None,
         })
