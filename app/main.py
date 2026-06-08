@@ -165,7 +165,7 @@ def _cleanup_loop() -> None:
 def upload_form(request: Request):
     if not get_current_user(request):
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("upload.html", {"request": request})
+    return templates.TemplateResponse(request, "upload.html")
 
 
 # ---------- Upload ----------
@@ -476,6 +476,7 @@ def my_uploads(request: Request):
         })
 
     return templates.TemplateResponse(
+        request,
         "my_uploads.html",
-        {"request": request, "jobs": jobs},
+        {"jobs": jobs},
     )

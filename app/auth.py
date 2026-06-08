@@ -215,7 +215,7 @@ def login_form(request: Request):
     if get_current_user(request):
         return RedirectResponse("/", status_code=303)
     return templates.TemplateResponse(
-        "login.html", {"request": request, "error": None}
+        request, "login.html", {"error": None}
     )
 
 
@@ -224,8 +224,9 @@ def login(request: Request, email: str = Form(...), password: str = Form(...)):
     user = authenticate(email, password)
     if not user:
         return templates.TemplateResponse(
+            request,
             "login.html",
-            {"request": request, "error": "E-mail of wachtwoord klopt niet."},
+            {"error": "E-mail of wachtwoord klopt niet."},
             status_code=400,
         )
     request.session["user_id"] = user["id"]
@@ -237,7 +238,7 @@ def register_form(request: Request):
     if get_current_user(request):
         return RedirectResponse("/", status_code=303)
     return templates.TemplateResponse(
-        "register.html", {"request": request, "error": None}
+        request, "register.html", {"error": None}
     )
 
 
@@ -247,8 +248,9 @@ def register(request: Request, email: str = Form(...), password: str = Form(...)
         user = create_user(email, password)
     except ValueError as e:
         return templates.TemplateResponse(
+            request,
             "register.html",
-            {"request": request, "error": str(e)},
+            {"error": str(e)},
             status_code=400,
         )
     request.session["user_id"] = user["id"]
@@ -265,7 +267,7 @@ def logout(request: Request):
 @router.get("/forgot", response_class=HTMLResponse)
 def forgot_form(request: Request):
     return templates.TemplateResponse(
-        "forgot_password.html", {"request": request, "message": None}
+        request, "forgot_password.html", {"message": None}
     )
 
 
@@ -276,9 +278,9 @@ def forgot_submit(request: Request, email: str = Form(...)):
         send_password_reset(email, token)
     # Always show the same message — no info leak on whether email exists
     return templates.TemplateResponse(
+        request,
         "forgot_password.html",
         {
-            "request": request,
             "message": "Als dit e-mailadres bestaat, ontvang je een reset-link.",
         },
     )
@@ -289,8 +291,9 @@ def reset_form(request: Request, token: str):
     if not validate_reset_token(token):
         return HTMLResponse("Reset-link is ongeldig of verlopen.", status_code=400)
     return templates.TemplateResponse(
+        request,
         "reset_password.html",
-        {"request": request, "token": token, "error": None},
+        {"token": token, "error": None},
     )
 
 
@@ -299,8 +302,9 @@ def reset_submit(request: Request, token: str, password: str = Form(...)):
     ok = reset_password(token, password)
     if not ok:
         return templates.TemplateResponse(
+            request,
             "reset_password.html",
-            {"request": request, "token": token, "error": "Link ongeldig of verlopen."},
+            {"token": token, "error": "Link ongeldig of verlopen."},
             status_code=400,
         )
     return RedirectResponse("/login", status_code=303)
